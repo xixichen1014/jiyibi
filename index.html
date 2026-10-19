@@ -1,0 +1,91 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+  <meta name="theme-color" content="#f5f6f8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="记一笔">
+  <meta name="description" content="随手记账：收支、多账户、预算与统计。">
+  <title>记一笔</title>
+  <script>
+    /* 启动诊断：任何脚本错误或加载失败都直接显示在页面底部，避免"白屏不知道原因" */
+    (function () {
+      function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>]/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c];
+        });
+      }
+      function show(title, detail) {
+        try {
+          var box = document.getElementById('boot-error');
+          if (!box) {
+            box = document.createElement('div');
+            box.id = 'boot-error';
+            box.setAttribute('style', 'position:fixed;left:0;right:0;bottom:0;z-index:99999;background:#fff1f2;' +
+              'color:#7f1d1d;font:13px/1.65 -apple-system,system-ui,"Microsoft YaHei",sans-serif;' +
+              'padding:14px 16px;max-height:65%;overflow:auto;border-top:2px solid #dc2626');
+            (document.body || document.documentElement).appendChild(box);
+          }
+          box.innerHTML = '<b>' + esc(title) + '</b>' +
+            (detail ? '<pre style="white-space:pre-wrap;margin:8px 0 0;font-size:11.5px;opacity:.8">' + esc(detail) + '</pre>' : '');
+        } catch (e) { /* 连错误条都画不出来就算了 */ }
+      }
+      window.addEventListener('error', function (e) {
+        var t = e.target;
+        if (t && t !== window && t.tagName && /^(SCRIPT|LINK|IMG)$/.test(t.tagName)) {
+          show('资源加载失败：' + (t.src || t.href), '当前地址：' + location.href);
+          return;
+        }
+        show('脚本出错：' + (e.message || '未知错误'), (e.filename || '') + ' 第 ' + (e.lineno || '?') + ' 行');
+      }, true);
+      window.addEventListener('unhandledrejection', function (e) {
+        var r = e.reason;
+        show('未处理的异步错误：' + (r && r.message ? r.message : String(r)), r && r.stack ? r.stack : '');
+      });
+      window.addEventListener('load', function () {
+        setTimeout(function () {
+          var app = document.getElementById('app');
+          if (!app) { show('页面结构缺失', '找不到 #app 容器'); return; }
+          if (!app.querySelector('.view')) {
+            show('界面没有渲染出来（白屏）',
+              '浏览器：' + navigator.userAgent + '\n地址：' + location.href +
+              '\n\n可能原因：浏览器禁用了 JavaScript、脚本被安全软件/扩展拦截，或页面文件来自缓存的旧版本。');
+          }
+        }, 1000);
+      });
+    })();
+  </script>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <div id="app" class="app">
+    <div style="padding:56px 28px;text-align:center;color:#8a90a0;font:14px/1.9 -apple-system,system-ui,'Microsoft YaHei',sans-serif">
+      <div style="font-size:32px;margin-bottom:12px">📘</div>
+      正在加载「记一笔」…
+      <div style="font-size:12px;margin-top:10px;opacity:.75">
+        如果一直停在这里，说明浏览器没有执行 JavaScript。<br>
+        请检查 edge://settings/content/javascript 是否为「允许」。
+      </div>
+    </div>
+  </div>
+  <noscript>
+    <div style="position:fixed;inset:0;display:grid;place-items:center;padding:24px;text-align:center;
+                font:14px/1.9 -apple-system,system-ui,'Microsoft YaHei',sans-serif;color:#7f1d1d;background:#fff1f2">
+      <div>
+        <b>浏览器禁用了 JavaScript</b><br>
+        这个应用需要 JavaScript 才能运行。<br>
+        请在浏览器设置里允许 JavaScript 后重新打开。
+      </div>
+    </div>
+  </noscript>
+  <div id="sheet-root"></div>
+  <div id="toast" class="toast" hidden></div>
+  <script src="core.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
