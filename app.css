@@ -440,11 +440,14 @@ svg { display: block; }
   border: 0; background: transparent;
   display: flex; flex-direction: column; align-items: center; gap: 6px;
   padding: 6px 2px; border-radius: 12px;
+  transition: background-color .16s ease, transform .12s ease;
 }
+.cat-cell:active { transform: scale(.94); }
 .cat-cell.on .cat-cell-ico { box-shadow: 0 0 0 2px var(--brand); }
 .cat-cell-ico {
   width: 40px; height: 40px; border-radius: 14px;
   display: grid; place-items: center; font-size: 19px;
+  transition: box-shadow .16s ease;
 }
 .cat-cell-name { font-size: 11px; color: #4b5563; }
 
@@ -465,6 +468,7 @@ svg { display: block; }
   font-size: 12.5px;
   color: #4b5563;
   white-space: nowrap;
+  transition: background-color .16s ease, border-color .16s ease, color .16s ease;
 }
 .chip.on { border-color: var(--brand); color: var(--brand); background: var(--brand-soft); font-weight: 600; }
 

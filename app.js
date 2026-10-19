@@ -564,28 +564,11 @@
 
   function recordSheetHTML() {
     var r = S.rec;
-    var isT = r.kind === 'transfer';
-    var cats = isT ? [] : allCategories(r.kind);
-    var accs = allAccounts();
     var kinds = [{ k: 'expense', t: '支出' }, { k: 'income', t: '收入' }, { k: 'transfer', t: '转账' }];
 
     var kindHTML = '<div class="seg seg--rec">' + kinds.map(function (o) {
       return '<button class="' + (r.kind === o.k ? 'on' : '') + '" data-act="rec-kind" data-kind="' + o.k + '">' + o.t + '</button>';
     }).join('') + '</div>';
-
-    var mid;
-    if (isT) {
-      mid = transferHTML(r, accs);
-    } else {
-      mid = '<div class="cat-grid">' + cats.map(function (c) {
-        return '<button class="cat-cell' + (r.categoryId === c.id ? ' on' : '') + '" data-act="rec-cat" data-id="' + c.id + '">' +
-          '<span class="cat-cell-ico" style="background:' + hexA(c.color, 0.14) + '">' + esc(c.icon) + '</span>' +
-          '<span class="cat-cell-name">' + esc(c.name) + '</span></button>';
-      }).join('') + '</div>' +
-        '<div class="chip-row"><span class="chip-row-label">账户</span>' + accs.map(function (a) {
-          return '<button class="chip' + (r.accountId === a.id ? ' on' : '') + '" data-act="rec-acc" data-id="' + a.id + '">' + esc(a.name) + '</button>';
-        }).join('') + '</div>';
-    }
 
     return '<div class="sheet sheet--full" role="dialog" aria-label="记一笔">' +
       '<div class="rec-head">' +
@@ -596,7 +579,7 @@
       '<div class="rec-body">' +
       '<div class="amount-box"><span class="amount-cur">' + S.db.settings.currency + '</span>' +
       '<span id="amount-display" class="amount-value">' + displayAmount(r.amountStr) + '</span></div>' +
-      mid +
+      '<div class="rec-mid">' + midHTML() + '</div>' +
       '<div class="rec-meta">' +
       '<label class="meta-chip"><span class="meta-ico">' + ICONS.calendar + '</span>' +
       '<input type="date" id="rec-date" value="' + r.date + '" max="' + C.todayISO() + '">' +
@@ -610,6 +593,31 @@
         return '<button class="key' + (k === 'del' ? ' key--del' : '') + '" data-act="key" data-key="' + k + '">' + (k === 'del' ? '⌫' : k) + '</button>';
       }).join('') +
       '</div></div>';
+  }
+
+  /** 分类九宫格 / 账户选择（转账时是转出转入）——单独抽出来，切换时只换这一块 */
+  function midHTML() {
+    var r = S.rec;
+    var accs = allAccounts();
+    if (r.kind === 'transfer') return transferHTML(r, accs);
+
+    var cats = allCategories(r.kind);
+    return '<div class="cat-grid">' + cats.map(function (c) {
+      return '<button class="cat-cell' + (r.categoryId === c.id ? ' on' : '') + '" data-act="rec-cat" data-id="' + c.id + '">' +
+        '<span class="cat-cell-ico" style="background:' + hexA(c.color, 0.14) + '">' + esc(c.icon) + '</span>' +
+        '<span class="cat-cell-name">' + esc(c.name) + '</span></button>';
+    }).join('') + '</div>' +
+      '<div class="chip-row"><span class="chip-row-label">账户</span>' + accs.map(function (a) {
+        return '<button class="chip' + (r.accountId === a.id ? ' on' : '') + '" data-act="rec-acc" data-id="' + a.id + '">' + esc(a.name) + '</button>';
+      }).join('') + '</div>';
+  }
+
+  /** 只切换选中态，不重建 DOM —— 避免点一下闪一下 */
+  function markSelected(selector, attr, value) {
+    var nodes = document.querySelectorAll(selector);
+    for (var i = 0; i < nodes.length; i++) {
+      nodes[i].classList.toggle('on', nodes[i].getAttribute(attr) === value);
+    }
   }
 
   function transferHTML(r, accs) {
@@ -866,18 +874,35 @@
       case 'add-tx': openRecord(null); break;
       case 'edit-tx': openRecord(id); break;
       case 'rec-kind':
+        if (S.rec.kind === ds.kind) break;
         S.rec.kind = ds.kind;
-        if (ds.kind === 'transfer') S.rec.categoryId = null;
-        else if (!S.rec.categoryId) {
+        // 切换收支时，原来选的分类可能不属于新类型，需要重选
+        var curCat = cat(S.rec.categoryId);
+        if (ds.kind === 'transfer') {
+          S.rec.categoryId = null;
+        } else if (!curCat || curCat.kind !== ds.kind) {
           var f = allCategories(ds.kind)[0];
           S.rec.categoryId = f ? f.id : null;
         }
-        renderSheet();
+        markSelected('[data-act="rec-kind"]', 'data-kind', ds.kind);
+        document.querySelector('.rec-mid').innerHTML = midHTML();
         break;
-      case 'rec-cat': S.rec.categoryId = id; renderSheet(); break;
-      case 'rec-acc': S.rec.accountId = id; renderSheet(); break;
-      case 'rec-from': S.rec.accountId = id; renderSheet(); break;
-      case 'rec-to': S.rec.toAccountId = id; renderSheet(); break;
+      case 'rec-cat':
+        S.rec.categoryId = id;
+        markSelected('.cat-cell', 'data-id', id);
+        break;
+      case 'rec-acc':
+        S.rec.accountId = id;
+        markSelected('.chip[data-act="rec-acc"]', 'data-id', id);
+        break;
+      case 'rec-from':
+        S.rec.accountId = id;
+        markSelected('.chip[data-act="rec-from"]', 'data-id', id);
+        break;
+      case 'rec-to':
+        S.rec.toAccountId = id;
+        markSelected('.chip[data-act="rec-to"]', 'data-id', id);
+        break;
       case 'key': keyPress(ds.key); break;
       case 'save-tx': saveRecord(); break;
       case 'del-tx': askDeleteTx(); break;
