@@ -745,6 +745,18 @@
       '</div></div>';
   }
 
+  /** 预算表单里随"总预算/分类预算"切换的那一块，单独更新避免整块重绘 */
+  function scopeExtraInner() {
+    var f = S.form;
+    if (f.scope !== 'category') return '';
+    var expCats = allCategories('expense');
+    var selectedCat = f.categoryId || (expCats[0] ? expCats[0].id : '');
+    return '<div class="field"><span>分类</span><div class="chip-row chip-row--wrap">' +
+      expCats.map(function (c) {
+        return '<button class="chip' + (selectedCat === c.id ? ' on' : '') + '" data-act="f-cat" data-id="' + c.id + '">' + esc(c.icon) + ' ' + esc(c.name) + '</button>';
+      }).join('') + '</div></div>';
+  }
+
   function budgetFormHTML() {
     var f = S.form;
     var isCat = f.scope === 'category';
@@ -757,10 +769,7 @@
       '<button class="' + (!isCat ? 'on' : '') + '" data-act="f-scope" data-id="total">总预算</button>' +
       '<button class="' + (isCat ? 'on' : '') + '" data-act="f-scope" data-id="category">分类预算</button>' +
       '</div>' +
-      (isCat ? '<div class="field"><span>分类</span><div class="chip-row chip-row--wrap">' +
-        expCats.map(function (c) {
-          return '<button class="chip' + (selectedCat === c.id ? ' on' : '') + '" data-act="f-cat" data-id="' + c.id + '">' + esc(c.icon) + ' ' + esc(c.name) + '</button>';
-        }).join('') + '</div></div>' : '') +
+      '<div id="f-scope-extra">' + scopeExtraInner() + '</div>' +
       '<label class="field"><span>每月上限</span><input id="f-amount" type="number" inputmode="decimal" step="1" min="0" placeholder="0" value="' + (f.amount == null ? '' : f.amount) + '"></label>' +
       '<button class="btn btn--block" data-act="save-budget">保存</button>' +
       (f.id ? '<button class="del-line" data-act="del-budget">删除这个预算</button>' : '') +
@@ -933,7 +942,7 @@
           : { id: null, name: '', initial: '', type: 'ewallet' };
         openSheet('account-form');
         break;
-      case 'f-type': S.form.type = ds.id; renderSheet(); break;
+      case 'f-type': S.form.type = ds.id; markSelected('[data-act="f-type"]', 'data-id', ds.id); break;
       case 'save-account': saveAccount(); break;
       case 'del-account': askDeleteAccount(id); break;
 
@@ -945,11 +954,10 @@
           : { id: null, name: '', icon: ICON_CHOICES[0], color: COLOR_CHOICES[0], kind: S.catTab };
         openSheet('category-form');
         break;
-      case 'f-icon': S.form.icon = id; renderSheet(); break;
-      case 'f-color': S.form.color = id; renderSheet(); break;
+      case 'f-icon': S.form.icon = id; markSelected('.icon-cell', 'data-id', id); break;
+      case 'f-color': S.form.color = id; markSelected('.color-dot', 'data-id', id); break;
       case 'save-category': saveCategory(); break;
       case 'del-category': askDeleteCategory(S.form.id); break;
-      case 'del-category': askDeleteCategory(id); break;
 
       /* ---- 预算 ---- */
       case 'edit-budget':
@@ -964,8 +972,16 @@
         }
         openSheet('budget-form');
         break;
-      case 'f-scope': S.form.scope = ds.id; renderSheet(); break;
-      case 'f-cat': S.form.categoryId = id; renderSheet(); break;
+      case 'f-scope':
+        S.form.scope = ds.id;
+        if (ds.id === 'category' && !S.form.categoryId) {
+          var firstExp = allCategories('expense')[0];
+          S.form.categoryId = firstExp ? firstExp.id : null;
+        }
+        markSelected('[data-act="f-scope"]', 'data-id', ds.id);
+        document.getElementById('f-scope-extra').innerHTML = scopeExtraInner();
+        break;
+      case 'f-cat': S.form.categoryId = id; markSelected('[data-act="f-cat"]', 'data-id', id); break;
       case 'save-budget': saveBudget(); break;
       case 'del-budget': askDeleteBudget(); break;
 

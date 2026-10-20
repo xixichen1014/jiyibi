@@ -1,8 +1,8 @@
-﻿/* 记一笔 · Service Worker
+/* 记一笔 · Service Worker
  * 缓存应用外壳，断网也能打开、记账。
  * 更新资源后把 CACHE_VERSION 改掉即可让旧缓存失效。
  */
-var CACHE_VERSION = 'jiyibi-pages-2';
+var CACHE_VERSION = 'jiyibi-pages-3';
 var ASSETS = [
   './',
   './index.html',
